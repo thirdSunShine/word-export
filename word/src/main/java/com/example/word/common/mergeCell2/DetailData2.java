@@ -11,7 +11,7 @@ public class DetailData2 {
     // 商品订单详情列表数据
     private List<RowRenderData> plists;
     
-    // 二级分类分组统计商品个数数据
+    //
     private List<Map<String,Object>> tlists;
     
 
