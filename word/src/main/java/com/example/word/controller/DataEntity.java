@@ -11,17 +11,27 @@ public class DataEntity {
 
     private String clientName;
 
+    private Long clientIpNum;
+
     private Long auditTotal;
 
-    private Integer clientIpTotal;
+    private Long clientIpTotal;
 
     private Long subAuditTotal;
 
-    public Integer getClientIpTotal() {
+    public Long getClientIpNum() {
+        return clientIpNum;
+    }
+
+    public void setClientIpNum(Long clientIpNum) {
+        this.clientIpNum = clientIpNum;
+    }
+
+    public Long getClientIpTotal() {
         return clientIpTotal;
     }
 
-    public void setClientIpTotal(Integer clientIpTotal) {
+    public void setClientIpTotal(Long clientIpTotal) {
         this.clientIpTotal = clientIpTotal;
     }
 

@@ -21,10 +21,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.config.Configure;
-import com.deepoove.poi.data.NumbericRenderData;
 import com.deepoove.poi.data.PictureRenderData;
 import com.deepoove.poi.data.RowRenderData;
-import com.deepoove.poi.data.TextRenderData;
 import com.deepoove.poi.data.style.TableStyle;
 import com.deepoove.poi.policy.HackLoopTableRenderPolicy;
 import com.example.word.common.MoneyUtils;
@@ -37,7 +35,7 @@ import com.example.word.common.mergeCell2.DetailData2;
 import com.example.word.common.mergeCell2.DetailTablePolicy2;
 import com.example.word.common.mergeCell2.PaymentData2;
 import com.example.word.common.mergeCell3.DetailData3;
-import com.example.word.common.mergeCell3.DetailTablePolicy3;
+import com.example.word.common.mergeCell2.DetailTablePolicy3;
 import com.example.word.common.mergeCell3.DetailTablePolicy4;
 import com.example.word.common.mergeCell3.PaymentData3;
 
@@ -516,6 +514,36 @@ public class ExportWordController {
         return basePath + fileName;//word模板地址
     }
 
+    private List<DataEntity> generateList(){
+        DataEntity entity1 = new DataEntity();
+        entity1.setDataIp("1.1.1.1");
+        entity1.setSubAuditTotal(50L);
+        entity1.setClientName("mysql");
+        entity1.setClientIpTotal(2L);
+        DataEntity entity2 = new DataEntity();
+        entity2.setDataIp("1.1.1.1");
+        entity2.setSubAuditTotal(70L);
+        entity2.setClientIpTotal(3L);
+        entity2.setClientName("mysql1111");
+        DataEntity entity3 = new DataEntity();
+        entity3.setDataIp("2.1.1.1");
+        entity3.setSubAuditTotal(50L);
+        entity3.setClientIpTotal(8L);
+        entity3.setClientName("redis");
+
+        DataEntity entity4 = new DataEntity();
+        entity4.setDataIp("2.1.1.1");
+        entity4.setSubAuditTotal(90L);
+        entity4.setClientIpTotal(5L);
+        entity4.setClientName("mysql222");
+
+        List<DataEntity> entities = new ArrayList<>();
+        entities.add(entity1);
+        entities.add(entity2);
+        entities.add(entity3);
+        entities.add(entity4);
+        return entities;
+    }
     /**
      * 销售订单信息导出word --- poi-tl（合并单元格（一个列表下的合并行）--商品订单明细）
      *
@@ -525,40 +553,7 @@ public class ExportWordController {
     public void myExport(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
 
-//            DataEntity entity0 = new DataEntity();
-//            entity0.setDataIp("1.1.1.1");
-//            entity0.setSubAuditTotal(0L);
-//            entity0.setAuditTotal(120L);
-//            entity0.setClientName("合计(共%d项)");
-
-            DataEntity entity1 = new DataEntity();
-            entity1.setDataIp("1.1.1.1");
-            entity1.setSubAuditTotal(50L);
-            entity1.setClientName("mysql");
-            DataEntity entity2 = new DataEntity();
-            entity2.setDataIp("1.1.1.1");
-            entity2.setSubAuditTotal(70L);
-            entity2.setClientName("mysql1111");
-            DataEntity entity3 = new DataEntity();
-            entity3.setDataIp("2.1.1.1");
-            entity3.setSubAuditTotal(50L);
-            entity3.setClientName("redis");
-
-            DataEntity entity4 = new DataEntity();
-            entity4.setDataIp("2.1.1.1");
-            entity4.setSubAuditTotal(90L);
-            entity4.setClientName("mysql222");
-
-//            DataEntity entity5 = new DataEntity();
-//            entity5.setDataIp("2.1.1.1");
-//            entity5.setSubAuditTotal(0L);
-//            entity5.setClientName("合计(共%d项)");
-
-            List<DataEntity> entities = new ArrayList<>();
-            entities.add(entity1);
-            entities.add(entity2);
-            entities.add(entity3);
-            entities.add(entity4);
+            List<DataEntity> entities = generateList();
             Map<String, List<DataEntity>> collect = entities.stream().collect(Collectors.groupingBy(DataEntity::getDataIp));
 
             Map<String,Long> auditTotal =
@@ -582,7 +577,7 @@ public class ExportWordController {
             rowStyle = new TableStyle();
             rowStyle.setAlign(STJc.CENTER);
             DetailData2 detailTable = new DetailData2();
-            List<RowRenderData> plists = new ArrayList<RowRenderData>();
+            List<RowRenderData> plists = new ArrayList<>();
             for (DataEntity entity : handlerEntity) {
                 RowRenderData plist = RowRenderData.build(entity.getDataIp(),
                         entity.getClientName(), String.valueOf(entity.getClientIpTotal())
@@ -590,9 +585,9 @@ public class ExportWordController {
                 plist.setRowStyle(rowStyle);
                 plists.add(plist);
             }
-            List<Map<String, Object>> tlists = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> tlists = new ArrayList<>();
             for (String key : collect.keySet()) {
-                Map<String, Object> map = new HashMap<String, Object>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("typeName", key);
                 map.put("listSize", collect.get(key).size() + 1);
                 tlists.add(map);
@@ -604,6 +599,80 @@ public class ExportWordController {
 
             XWPFTemplate template = XWPFTemplate.compile(getBasePath("tmp.docx"), config).render(datas);
 
+            //=================生成文件保存在本地D盘某目录下=================
+            String temDir = filePath;
+            Long time = new Date().getTime();
+            // 生成的word格式
+            String formatSuffix = ".docx";
+            // 拼接后的文件名
+            String fileName = time + formatSuffix;//文件名  带后缀
+
+            FileOutputStream fos = new FileOutputStream(temDir + fileName);
+            template.write(fos);
+            //=================生成word到设置浏览默认下载地址=================
+            // 设置强制下载不打开
+            response.setContentType("application/force-download");
+            // 设置文件名
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            OutputStream out = response.getOutputStream();
+            template.write(out);
+            out.flush();
+            out.close();
+            template.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @RequestMapping("/my1")
+    public void myExport1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            List<DataEntity> entities = generateList();
+            Map<String, List<DataEntity>> collect = entities.stream().collect(Collectors.groupingBy(DataEntity::getDataIp));
+
+            Map<String,Long> auditTotal =
+                    entities.stream().collect(Collectors.groupingBy(DataEntity::getDataIp
+                            ,Collectors.summingLong(DataEntity::getSubAuditTotal)));
+
+//            Map<String,Long> clientIpTotal =
+//                    entities.stream().collect(Collectors.groupingBy(DataEntity::getDataIp
+//                            ,Collectors.summingLong(DataEntity::getClientIpTotal)));
+            List<DataEntity> handlerEntity = new ArrayList<>();
+            for (String key : collect.keySet()){
+                DataEntity sumEntity = new DataEntity();
+                sumEntity.setDataIp(key);
+                sumEntity.setClientName(String.format("合计(共%d项)",collect.get(key).size()));
+//                sumEntity.setClientIpNum(clientIpTotal.get(key));
+                sumEntity.setSubAuditTotal(auditTotal.get(key));
+                handlerEntity.add(sumEntity);
+                handlerEntity.addAll(collect.get(key));
+            }
+            MyTmpData datas = new MyTmpData();
+            TableStyle rowStyle = new TableStyle();
+            rowStyle = new TableStyle();
+            rowStyle.setAlign(STJc.CENTER);
+            DetailData2 detailTable = new DetailData2();
+            List<RowRenderData> plists = new ArrayList<>();
+            for (DataEntity entity : handlerEntity) {
+                RowRenderData plist = RowRenderData.build(entity.getDataIp(),
+                        entity.getClientName(), String.valueOf(entity.getClientIpTotal())
+                        , String.valueOf(entity.getSubAuditTotal()));
+                plist.setRowStyle(rowStyle);
+                plists.add(plist);
+            }
+            List<Map<String, Object>> tlists = new ArrayList<>();
+            for (String key : collect.keySet()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("typeName", key);
+                map.put("listSize", collect.get(key).size() + 1);
+                tlists.add(map);
+            }
+            detailTable.setPlists(plists);
+            detailTable.setTlists(tlists);
+            datas.setDetailTable(detailTable);
+            Configure config = Configure.newBuilder().bind("detail_table", new DetailTablePolicy3()).build();
+            XWPFTemplate template = XWPFTemplate.compile(getBasePath("tmp1.docx"), config).render(datas);
             //=================生成文件保存在本地D盘某目录下=================
             String temDir = filePath;
             Long time = new Date().getTime();
